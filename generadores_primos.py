@@ -499,7 +499,9 @@ def menu_interactivo():
         print(" 3) Cifrar un mensaje")
         print(" 4) Descifrar un mensaje (pega los bloques separados por comas)")
         print(" 5) Pruebas de encriptacion")
-        print(" 6) Salir")
+        print(" 6) Demo completa (todo en orden)")
+        print(" 7) Abrir interfaz grafica")
+        print(" 8) Salir")
         try:
             op = input("Opcion: ").strip()
         except EOFError:
@@ -549,6 +551,10 @@ def menu_interactivo():
                 resultados = correr_experimento(verbose=False)
             pruebas_encriptacion(resultados)
         elif op == "6":
+            demo_completa()
+        elif op == "7":
+            interfaz_grafica()
+        elif op == "8":
             return
         else:
             print("  opcion no valida")
@@ -705,6 +711,19 @@ def interfaz_grafica():
     root.mainloop()
 
 
+def demo_completa():
+    print("### 1. LA MAQUINA: una salida de 40 cifras por tecnica (semilla=42)")
+    for k in TECNICAS:
+        n = MaquinaPRNG(k, 42).siguiente()
+        print(f"  {TECNICAS[k][0]:<18}{n}  ({len(str(n))} cifras)")
+    print("\n### 2. EXPERIMENTO: 10 000 numeros de 40 cifras por tecnica")
+    res = correr_experimento()
+    print("\n### 3. SISTEMA DE ENCRIPTACION")
+    demostrar_rsa(res)
+    print("\n### 4. PRUEBAS DE ENCRIPTACION")
+    pruebas_encriptacion(res)
+
+
 def main():
     ap = argparse.ArgumentParser(description="Maquina para encriptar mensajes con numeros primos grandes")
     sub = ap.add_subparsers(dest="cmd")
@@ -719,11 +738,11 @@ def main():
     c = sub.add_parser("cifrar", help="cifrar/descifrar un mensaje con los primos hallados")
     c.add_argument("--mensaje", default="HOLA RSA DESDE SISTEMAS COMPLEJOS")
     sub.add_parser("pruebas", help="bateria de pruebas de encriptacion")
-    sub.add_parser("menu", help="menu interactivo en consola")
+    sub.add_parser("menu", help="menu interactivo (opcion por defecto)")
     sub.add_parser("gui", help="interfaz grafica (tkinter)")
-    sub.add_parser("todo", help="demo completa (por defecto)")
+    sub.add_parser("todo", help="demo completa sin menu")
     args = ap.parse_args()
-    cmd = args.cmd or "todo"
+    cmd = args.cmd or "menu"
 
     if cmd == "menu":
         menu_interactivo()
@@ -740,21 +759,15 @@ def main():
         return
 
     if cmd == "todo":
-        print("### 1. LA MAQUINA: una salida de 40 cifras por tecnica (semilla=42)")
-        for k in TECNICAS:
-            n = MaquinaPRNG(k, 42).siguiente()
-            print(f"  {TECNICAS[k][0]:<18}{n}  ({len(str(n))} cifras)")
-        print("\n### 2. EXPERIMENTO: 10 000 numeros de 40 cifras por tecnica")
-    cant = getattr(args, "cantidad", N_NUMEROS) if cmd == "experimento" else N_NUMEROS
-    sem = getattr(args, "semilla", SEED) if cmd == "experimento" else SEED
-    res = correr_experimento(cant, sem, verbose=cmd in ("experimento", "todo"))
-    if cmd == "experimento":
+        demo_completa()
         return
-    if cmd in ("cifrar", "todo"):
-        print("\n### 3. SISTEMA DE ENCRIPTACION")
-        demostrar_rsa(res, getattr(args, "mensaje", "HOLA RSA DESDE SISTEMAS COMPLEJOS"))
-    if cmd in ("pruebas", "todo"):
-        print("\n### 4. PRUEBAS DE ENCRIPTACION")
+    res = correr_experimento(
+        getattr(args, "cantidad", N_NUMEROS) if cmd == "experimento" else N_NUMEROS,
+        getattr(args, "semilla", SEED) if cmd == "experimento" else SEED,
+        verbose=cmd == "experimento")
+    if cmd == "cifrar":
+        demostrar_rsa(res, args.mensaje)
+    elif cmd == "pruebas":
         pruebas_encriptacion(res)
 
 
